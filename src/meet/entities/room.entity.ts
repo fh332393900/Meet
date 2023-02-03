@@ -1,23 +1,23 @@
 import { BaseEntity } from 'src/common/entity/baseEntity';
 import { Column, Entity } from 'typeorm';
 
-@Entity('meet_room')
-export class RoomEntity extends BaseEntity {
-  @Column({ unique: true, comment: '创建房间人id' })
-  room_user_id: string;
+@Entity('meet')
+export class Meet extends BaseEntity {
+  @Column({ unique: true, comment: '创建会议人id' })
+  meetUserId: string;
 
-  @Column({ unique: true, comment: '房间ID' })
-  room_id: number;
+  @Column({ unique: true, comment: '会议ID' })
+  meetId: string;
 
-  @Column({ length: 255, nullable: true, comment: '房间logo' })
-  room_logo: string;
+  @Column({ length: 255, nullable: true, comment: '会议logo' })
+  meetLogo: string;
 
-  @Column({ length: 20, comment: '房间名称' })
-  room_name: string;
+  @Column({ length: 20, comment: '会议名称' })
+  meetName: string;
 
-  @Column({ default: 1, comment: '房间是否需要密码 1:公开 2:加密' })
-  room_need_password: number;
+  @Column({ default: 1, comment: '会议是否需要密码 1:公开 2:加密' })
+  meetNeedPassword: number;
 
-  @Column({ length: 255, nullable: true, comment: '房间密码' })
-  room_password: string;
+  @Column({ length: 255, nullable: true, comment: '会议房间密码' })
+  meetPassword: string;
 }

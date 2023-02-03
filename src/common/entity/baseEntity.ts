@@ -15,7 +15,7 @@ export class BaseEntity {
     type: 'datetime',
     length: 0,
     nullable: false,
-    name: 'created_at',
+    name: 'createdTime',
     comment: '创建时间',
   })
   createdAt: Date;
@@ -24,7 +24,7 @@ export class BaseEntity {
     type: 'datetime',
     length: 0,
     nullable: false,
-    name: 'updated_at',
+    name: 'updatedTime',
     comment: '更新时间',
   })
   updatedAt: Date;
@@ -33,7 +33,7 @@ export class BaseEntity {
     type: 'datetime',
     length: 0,
     nullable: false,
-    name: 'deleted_at',
+    name: 'deletedTime',
     comment: '删除时间',
   })
   deletedAt: Date;
