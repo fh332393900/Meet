@@ -6,6 +6,8 @@ import {
   Body,
   Request,
   UseGuards,
+  Delete,
+  Query,
 } from '@nestjs/common';
 import { MeetService } from './meet.service';
 import {
@@ -36,5 +38,13 @@ export class MeetController {
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() createMeetDto: CreateMeetDto, @Request() req) {
     return await this.meetService.create(createMeetDto, req);
+  }
+
+  @Delete('del')
+  @ApiOperation({ summary: '删除会议' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  async del(@Query('id') id: string, @Request() req) {
+    return await this.meetService.del(id, req);
   }
 }

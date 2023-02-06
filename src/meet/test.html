@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>socket.io</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+  <style>
+     video {
+      width: 360px;
+    }
+  </style>
+</head>
+<body>
+  <h1>111</h1>
+  <input id="msg" />
+  <input type="button" value="send" onclick="addCart()"><br>
+  <div>
+      <button id="connserver">Connect Sig Server</button>
+      <button id="leave" disabled>Leave</button>
+  </div>
+  <div class="_box">
+    <div>
+        <h2>Local:</h2>
+        <video id="localvideo" autoplay playsinline></video>
+    </div>
+    <div>
+        <h2>Remote:</h2>
+        <video id="remotevideo" autoplay playsinline></video>
+
+        <!-- <div id="remotevideoBox"></div> -->
+    </div>
+  </div>
+  <script type="text/javascript">
+    var btnConn = document.querySelector("button#connserver");
+    var btnLeave = document.querySelector("button#leave");
+    var localVideo = document.querySelector("video#localvideo");
+    var remoteVideo = document.querySelector("video#remotevideo");
+    var remotevideoBox = document.getElementById("remotevideoBox");
+    var localStream;
+    let state = "init";
+    let pc = null;  // peerConnect // 连接
+
+    var socket = null;
+
+    function addCart(){
+      const msg = document.getElementById('msg').value;
+      console.log(msg)
+      console.log(socket)
+      socket.emit('message', msg);
+    }
+
+    function sendMessage(data) {
+      console.log("send", data)
+      if (socket) {
+        socket.emit("message", data);
+      }
+    }
+
+    function getAnswer() {
+      pc.setLocalDescription(desc);
+      socket.emit('message', desc);
+      console.log('getAnswer', desc);
+
+    }
+
+    // 异步操作 成功调用
+    function getOffer(desc) {
+      pc.setLocalDescription(desc);
+      socket.emit('message', desc);
+      console.log('getOffer', desc);
+    }
+    
+    // 创建媒体协商
+    function call() {
+      // 有人加入时调用
+      if (state === 'joined_conn') {
+        if (pc) {
+          const options = {
+            offerToReceiveAudio: 1,
+            offerToReceiveVideo: 1
+          }
+          pc.createOffer(options)
+            .then(getOffer)
+            .catch(err => console.log("createOffer---err", err))
+        }
+      }
+    }
+
+    function getMediaStream(stream) {
+      localVideo.srcObject = stream; // 本地视频
+      localStream = stream;
+      coon(); // 连接服务端
+    }
+
+    function coon() {
+      //和服务器建立长连接
+      socket = io.connect('http://localhost:3002?roomid=1');
+
+      // 新用户加入
+      socket.on("joined", () => {
+        console.log("收到---joined");
+        state = "joined";
+        createPeerConnecion();
+      });
+      // 其他加入
+      socket.on("otherJoin", (roomid, id) => {
+        console.log('------------------otherJoin')
+        // 开始媒体协商
+        if (state === "joined_unbind") {
+          createPeerConnecion(); // 创建链接并绑定
+        }
+        state = "joined_conn";
+        call();
+        // 媒体协商
+        console.log("recevie--otherjoin-state--", state);
+      });
+      // 离开了
+      socket.on("bye", (roomid, id) => {
+        console.log("-bye-", roomid, id);
+        state = "joined_unbind"; // 未绑定状态
+        console.log("bye-state--", state);
+        closePeerConnection();
+      });
+      //接收服务器返回的信息
+      socket.on('message', function(data){
+        console.log(data, '-------data-------')
+        console.log(pc);
+        if(data) {
+          if(data.type ==='offer') {
+           
+            // 如果收到是offer 对端已经创建好了
+            pc.setRemoteDescription(new RTCSessionDescription(data));
+          //create answer
+            pc.createAnswer()
+            .then(getAnswer)
+            .catch(err=>{console.log("err 创建失败getanswer")});
+          } else if(data.type ==='answer') {
+            pc.setRemoteDescription(new RTCSessionDescription(data));
+          } else if(data.type ==='candidate') {
+            var candidate = new RTCIceCandidate({
+              sdpMLineIndex: data.label,
+              candidate: data.candidate
+            });
+            // 加入到本端 peercollect
+            pc.addIceCandidate(candidate)
+            .then(()=>{
+              console.log('Successed to add ice candidate');	
+            })
+            .catch(err=>{
+              console.error(err);	
+            });
+          } else {
+            console.error("the message is invalid!", data);
+          }
+        }
+      });
+    }
+    // 创建一个连接
+    function createPeerConnecion() {
+      console.log("创建 createPeerConnecion");
+      if (!pc) {
+        let iceServer = {
+          "iceServers": [
+            // {
+            //   url: "stun:stun.l.google.com:19302",
+            // },
+          {
+            // "url": "stun:stun1.l.google.com:19302",
+            urls: "turn:124.70.0.135:3478?transport=udp",
+            username: "zhizhong",
+            credential: "123456"
+          }
+          //  { 
+          //    "url":"stun:stun.l.google.com:19302", 
+          //   }
+        ],
+        sdpSemantics: 'plan-b'
+        };
+        pc = new RTCPeerConnection(iceServer);
+        console.log('----------- RTCPeerConnection')
+        // 协商的时候监听到 这里做端对端的消息日志
+        pc.onicecandidate = (e) => {
+          if (e.candidate) {
+            // 
+            console.log('-onicecandidate kkkkkkkk---', e.candidate);
+            // 发送出去
+            sendMessage({
+              type: 'candidate',
+              label: e.candidate.sdpMLineIndex,
+              id: e.candidate.sdpMid,
+              candidate: e.candidate.candidate
+            })
+          }
+        }
+        // 远端走ontrack
+        pc.ontrack = (e) => {
+          // 设置给远端 显示远端流
+          remoteVideo.srcObject = e.streams[0];
+          console.log('远端流',e, 'localStream',localStream);
+        }
+      }
+
+      // 当连接在了，给本地设置 加到pc中音频和视频的媒体流
+      if (localStream) {
+        localStream.getTracks().forEach((track) => {
+          // 
+          console.log('加到pc中音频和视频的媒体流',track);
+          pc.addTrack(track, localStream);
+        })
+      }
+    }
+
+    // 关闭本地设备
+    function closeLocalMedia() {
+      if (localStream && localStream.getTracks()) {
+        localStream.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+      localStream = null;
+    }
+
+    // 关闭连接pc 释放资源
+    function closePeerConnection() {
+      // closeLocalMedia();
+      console.log("关闭--closePeerConnection");
+      if (pc) {
+        pc.close();
+        pc = null;
+      }
+    }
+
+    function start() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.log("不支持");
+        return;
+      } else {
+        var constraints = {
+          video: true,
+          audio: {
+            channelCount:1, //单声道
+            noiseSuppression: true, //降噪
+            echoCancellation: true   // 回音消除
+        }
+        };
+        navigator.mediaDevices
+          .getDisplayMedia(constraints)
+          .then(getMediaStream)
+          .catch((err) => console.log("错误", err));
+      }
+    }
+
+    btnConn.onclick = start;
+
+  </script>
+  <script src="./lib/adapter.min.js"></script>
+</body>
+</html>
+

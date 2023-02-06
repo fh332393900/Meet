@@ -3,9 +3,10 @@ import { Column, Entity } from 'typeorm';
 
 @Entity('meet')
 export class Meet extends BaseEntity {
-  @Column({ unique: true, comment: '创建会议人id' })
+  @Column({ comment: '创建会议人id' })
   meetUserId: string;
 
+  // unique 唯一主键
   @Column({ unique: true, comment: '会议ID' })
   meetId: string;
 
