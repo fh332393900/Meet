@@ -13,11 +13,11 @@ export class MeetService {
   ) {}
 
   // 创建会议
-  async create(createMeetDto: CreateMeetDto) {
+  async create(createMeetDto: CreateMeetDto, req) {
     const createMeetDtoParam = await this.meetRepository.create(createMeetDto);
     const meetId = getuuid();
     createMeetDtoParam.meetId = meetId;
-    console.log(createMeetDtoParam, 'createMeetDtoParam');
+    createMeetDtoParam.meetUserId = req.user.id;
     return this.meetRepository.save(createMeetDtoParam);
   }
 }

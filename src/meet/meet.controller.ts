@@ -4,6 +4,8 @@ import {
   Post,
   UseInterceptors,
   Body,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { MeetService } from './meet.service';
 import {
@@ -18,6 +20,7 @@ import {
 import { CreateMeetDto } from './dto/create-meet.dto';
 import { Meet } from './entities/room.entity';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('meet')
 @ApiTags('会议管理')
@@ -29,7 +32,9 @@ export class MeetController {
   @UseInterceptors(AnyFilesInterceptor())
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ status: 201, type: [Meet] })
-  async create(@Body() createMeetDto: CreateMeetDto) {
-    return await this.meetService.create(createMeetDto);
+  @ApiBearerAuth() // swagger文档设置token
+  @UseGuards(AuthGuard('jwt'))
+  async create(@Body() createMeetDto: CreateMeetDto, @Request() req) {
+    return await this.meetService.create(createMeetDto, req);
   }
 }
