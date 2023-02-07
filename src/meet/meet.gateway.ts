@@ -28,7 +28,7 @@ export class MeetGateway {
     console.log(data);
     const roomid = url.parse(client.request.url, true).query
       .roomid; /*获取房间号 获取桌号*/
-    this.socket.to(roomid).emit('message', data);
+    client.to(roomid).emit('message', data);
   }
 
   handleDisconnect(client: Socket) {
@@ -45,9 +45,9 @@ export class MeetGateway {
       .roomid; /*获取房间号 获取桌号*/
     client.join(roomid);
     this.onlineSize += 1;
-    this.socket.to(roomid).emit('joined');
+    client.emit('joined');
     if (this.onlineSize > 1) {
-      this.socket.to(roomid).emit('otherjoin');
+      client.to(roomid).emit('otherjoin');
     }
     console.log(this.onlineSize, 'onlineSize');
   }
