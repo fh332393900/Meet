@@ -15,6 +15,7 @@ import * as url from 'url';
 })
 export class MeetGateway {
   @WebSocketServer() private socket: Server;
+  private roomid: any;
 
   private onlineSize = 0;
 
@@ -25,10 +26,15 @@ export class MeetGateway {
 
   @SubscribeMessage('message')
   async handleMessage(client: Socket, data: any) {
-    console.log(data);
     const roomid = url.parse(client.request.url, true).query
       .roomid; /*获取房间号 获取桌号*/
+    this.roomid = roomid;
     client.to(roomid).emit('message', data);
+  }
+
+  @SubscribeMessage('chatMessage')
+  async handleChatMessage(client: Socket, data: any) {
+    this.socket.to(this.roomid).emit('chatMessage', data);
   }
 
   handleDisconnect(client: Socket) {
@@ -37,7 +43,6 @@ export class MeetGateway {
     client.join(roomid);
     this.onlineSize -= 1;
     this.socket.to(roomid).emit('bye');
-    console.log(this.onlineSize, 'onlineSize');
   }
 
   connectSuccess(client) {
@@ -49,6 +54,5 @@ export class MeetGateway {
     if (this.onlineSize > 1) {
       client.to(roomid).emit('otherjoin');
     }
-    console.log(this.onlineSize, 'onlineSize');
   }
 }

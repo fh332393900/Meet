@@ -30,6 +30,7 @@
 
         <!-- <div id="remotevideoBox"></div> -->
     </div>
+    <div id="chat"></div>
   </div>
   <script type="text/javascript">
     var btnConn = document.querySelector("button#connserver");
@@ -45,7 +46,11 @@
 
     function addCart(){
       const msg = document.getElementById('msg').value;
-      socket.emit('message', msg);
+      const sendData = {
+        type: 'chat',
+        msg: msg,
+      };
+      socket.emit('chatMessage', sendData);
     }
 
     function sendMessage(data) {
@@ -132,9 +137,20 @@
               console.error(err);	
             });
           } else {
+            const chatNode = document.getElementById('chat');
+            const childNode = document.createElement('div');
+            childNode.innerHTML = data.msg;
+            chatNode.appendChild(childNode);
           }
         }
       });
+      socket.on('chatMessage', (data) => {
+        console.log(data, 'data0000000000');
+        const chatNode = document.getElementById('chat');
+        const childNode = document.createElement('div');
+        childNode.innerHTML = data.msg;
+        chatNode.appendChild(childNode);
+      })
     }
     // 创建一个连接
     function createPeerConnecion() {
