@@ -30,6 +30,7 @@
 
         <!-- <div id="remotevideoBox"></div> -->
     </div>
+    <div id="chat"></div>
   </div>
   <script type="text/javascript">
     var btnConn = document.querySelector("button#connserver");
@@ -45,7 +46,11 @@
 
     function addCart(){
       const msg = document.getElementById('msg').value;
-      socket.emit('message', msg);
+      const sendData = {
+        type: 'chat',
+        msg: msg,
+      };
+      socket.emit('chatMessage', sendData);
     }
 
     function sendMessage(data) {
@@ -84,7 +89,9 @@
 
     function coon() {
       //和服务器建立长连接
-      socket = io.connect('http://localhost:3002?roomid=1');
+      socket = io.connect('https://meet-ws.stevenfeng.cn?roomid=1', {
+        withCredentials: true,
+      });
 
       // 新用户加入
       socket.on("joined", () => {
@@ -109,6 +116,7 @@
       });
       //接收服务器返回的信息
       socket.on('message', async function(data){
+        console.log(data,'=========data==========')
         if(data) {
           if(data.type ==='offer') {
             // 如果收到是offer 对端已经创建好了
@@ -132,33 +140,54 @@
               console.error(err);	
             });
           } else {
+            const chatNode = document.getElementById('chat');
+            const childNode = document.createElement('div');
+            childNode.innerHTML = data.msg;
+            chatNode.appendChild(childNode);
           }
         }
       });
+      socket.on('chatMessage', (data) => {
+        console.log(data, 'data0000000000');
+        const chatNode = document.getElementById('chat');
+        const childNode = document.createElement('div');
+        childNode.innerHTML = data.msg;
+        chatNode.appendChild(childNode);
+      })
     }
     // 创建一个连接
     function createPeerConnecion() {
       if (!pc) {
-        let iceServer = {
-          "iceServers": [
-            // {
-            //   url: "stun:stun.l.google.com:19302",
-            // },
-          {
-            // "url": "stun:stun1.l.google.com:19302",
-            urls: "turn:124.70.0.135:3478?transport=udp",
-            username: "zhizhong",
-            credential: "123456"
-          }
-          //  { 
-          //    "url":"stun:stun.l.google.com:19302", 
-          //   }
-        ],
-        sdpSemantics: 'plan-b'
-        };
-        pc = new RTCPeerConnection(iceServer);
+        // let iceServer = {
+        //   "iceServers": [
+        //       // {
+        //       //   url: "stun:stun.l.google.com:19302",
+        //       // },
+        //     // {
+        //     //   // "url": "stun:stun1.l.google.com:19302",
+        //     //   urls: "turn:124.70.0.135:3478?transport=udp",
+        //     //   username: "zhizhong",
+        //     //   credential: "123456"
+        //     // },
+        //     { 
+        //       urls: 'stun:stun.voipbuster.com', 
+        //     }
+        //   ],
+        //   // sdpSemantics: 'plan-b'
+        // };
+        pc = new RTCPeerConnection({
+          iceServers: [
+            {
+              // urls: 'stun:stun.voipbuster.com',
+              urls: 'turn:124.70.0.135:3478?transport=udp',
+              username: "zhizhong",
+              credential: "123456"
+            },
+          ],
+        });
         // 协商的时候监听到 这里做端对端的消息日志
         pc.onicecandidate = (e) => {
+          console.log(e, '----------e----------')
           if (e.candidate) {
             // 发送出去
             sendMessage({
@@ -169,11 +198,16 @@
             })
           }
         }
+        let remoteStream = new MediaStream();
+        remoteVideo.srcObject = remoteStream
         // 远端走ontrack
         pc.ontrack = (e) => {
           // 设置给远端 显示远端流
-          remoteVideo.srcObject = e.streams[0];
-          console.log('远端流',e, 'localStream',localStream);
+          e.streams[0].getTracks().forEach((track) => {
+            remoteStream.addTrack(track);
+          })
+          
+          console.log('远端流',e.streams[0], 'localStream',localStream);
         }
       }
 
