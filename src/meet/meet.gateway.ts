@@ -6,7 +6,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import * as url from 'url';
 
-@WebSocketGateway(3002, {
+@WebSocketGateway({
   allowEIO3: true,
   cors: {
     origin: /.*/,
