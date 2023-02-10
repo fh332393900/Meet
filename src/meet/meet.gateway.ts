@@ -4,7 +4,17 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Meet } from './entities/room.entity';
 import * as url from 'url';
+
+type WsResponse = {
+  code: number;
+  type?: string;
+  data?: any;
+  msg: string;
+};
 
 @WebSocketGateway({
   allowEIO3: true,
@@ -14,8 +24,15 @@ import * as url from 'url';
   },
 })
 export class MeetGateway {
+  constructor(
+    @InjectRepository(Meet)
+    private readonly meetRepository: Repository<Meet>,
+  ) {}
+
   @WebSocketServer() private socket: Server;
-  private roomid: any;
+  private roomId: any;
+
+  private roomListMap: Map<string, any>;
 
   private onlineSize = 0;
 
@@ -26,33 +43,38 @@ export class MeetGateway {
 
   @SubscribeMessage('message')
   async handleMessage(client: Socket, data: any) {
-    const roomid = url.parse(client.request.url, true).query
-      .roomid; /*获取房间号 获取桌号*/
-    this.roomid = roomid;
-    client.to(roomid).emit('message', data);
+    client.to(this.roomId).emit('message', data);
   }
 
   @SubscribeMessage('chatMessage')
   async handleChatMessage(client: Socket, data: any) {
-    this.socket.to(this.roomid).emit('chatMessage', data);
+    this.socket.to(this.roomId).emit('chatMessage', data);
   }
 
   handleDisconnect(client: Socket) {
-    const roomid = url.parse(client.request.url, true).query
-      .roomid; /*获取房间号 获取桌号*/
-    client.join(roomid);
     this.onlineSize -= 1;
-    this.socket.to(roomid).emit('bye');
+    client.to(this.roomId).emit('bye');
   }
 
-  connectSuccess(client) {
-    const roomid = url.parse(client.request.url, true).query
-      .roomid; /*获取房间号 获取桌号*/
-    client.join(roomid);
+  async connectSuccess(client: Socket) {
+    const { roomId, token } = client.handshake.query;
+    const meet = await this.meetRepository.findOne({
+      meetId: roomId as string,
+    });
+    if (!meet) {
+      const res: WsResponse = {
+        code: -1,
+        msg: 'roomId is not found',
+      };
+      client.emit('message', res);
+      return client.disconnect();
+    }
+    this.roomId = roomId;
+    client.join(roomId);
     this.onlineSize += 1;
     client.emit('joined');
     if (this.onlineSize > 1) {
-      client.to(roomid).emit('otherjoin');
+      client.to(roomId).emit('otherjoin');
     }
   }
 }
