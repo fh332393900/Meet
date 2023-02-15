@@ -57,7 +57,7 @@ export class MeetGateway {
   }
 
   async connectSuccess(client: Socket) {
-    const { roomId, token } = client.handshake.query;
+    const { roomId } = client.handshake.query;
     const meet = await this.meetRepository.findOne({
       meetId: roomId as string,
     });
