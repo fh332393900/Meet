@@ -8,25 +8,25 @@ export class CreateUserDto {
   readonly username: string;
 
   @ApiPropertyOptional({ description: '用户昵称' })
-  readonly nickname: string;
+  readonly nickname?: string;
 
   @ApiPropertyOptional({ description: '用户手机号' })
   @IsNumber({}, { message: '手机号只能为数字' })
-  readonly phone: number;
+  readonly phone?: number;
 
   @ApiPropertyOptional({ description: '性别' })
-  readonly sex: number;
+  readonly sex?: number;
 
   @ApiPropertyOptional({ description: '出生日期' })
-  readonly birthday: Date;
+  readonly birthday?: Date;
 
   @ApiProperty({ description: '用户密码' })
   @IsNotEmpty({ message: '密码不能为空' })
   readonly password: string;
 
   @ApiPropertyOptional({ description: '用户头像' })
-  readonly avatar: string;
+  readonly avatar?: string;
 
   @ApiPropertyOptional({ description: '用户邮箱' })
-  readonly email: string;
+  readonly email?: string;
 }
