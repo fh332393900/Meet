@@ -12,8 +12,10 @@ WORKDIR /usr/src/app
 # Copying this first prevents re-running npm install on every code change.
 COPY --chown=node:node package*.json ./
 
+RUN npm install -g npm@9.5.1
+
 # Install app dependencies using the `npm ci` command instead of `npm install`
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Bundle app source
 COPY --chown=node:node . .
@@ -31,6 +33,8 @@ WORKDIR /usr/src/app
 
 COPY --chown=node:node package*.json ./
 
+RUN npm install -g npm@9.5.1
+
 # In order to run `npm run build` we need access to the Nest CLI which is a dev dependency. In the previous development stage we ran `npm ci` which installed all dependencies, so we can copy over the node_modules directory from the development image
 COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modules
 
@@ -43,7 +47,7 @@ RUN npm run build
 ENV NODE_ENV production
 
 # Running `npm ci` removes the existing node_modules directory and passing in --only=production ensures that only the production dependencies are installed. This ensures that the node_modules directory is as optimized as possible
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --legacy-peer-deps --only=production && npm cache clean --force
 
 USER node
 
