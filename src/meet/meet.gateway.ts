@@ -7,7 +7,6 @@ import { Server, Socket } from 'socket.io';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Meet } from './entities/room.entity';
-import * as url from 'url';
 
 type WsResponse = {
   code: number;
