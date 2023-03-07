@@ -7,6 +7,7 @@ import { Server, Socket } from 'socket.io';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Meet } from './entities/room.entity';
+import { User } from '../user/entities/user.entity';
 
 type WsResponse = {
   code: number;
@@ -26,6 +27,8 @@ export class MeetGateway {
   constructor(
     @InjectRepository(Meet)
     private readonly meetRepository: Repository<Meet>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   @WebSocketServer() private socket: Server;
@@ -56,7 +59,7 @@ export class MeetGateway {
   }
 
   async connectSuccess(client: Socket) {
-    const { roomId } = client.handshake.query;
+    const { roomId, userId } = client.handshake.query;
     const meet = await this.meetRepository.findOne({
       meetId: roomId as string,
     });
@@ -73,7 +76,12 @@ export class MeetGateway {
     this.onlineSize += 1;
     client.emit('joined');
     if (this.onlineSize > 1) {
-      client.to(roomId).emit('otherjoin');
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+      });
+      console.log(111111111111);
+      console.log(user);
+      client.to(roomId).emit('otherjoin', JSON.stringify(user));
     }
   }
 }

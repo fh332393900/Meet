@@ -4,9 +4,10 @@ import { MeetController } from './meet.controller';
 import { MeetGateway } from './meet.gateway';
 import { MeetService } from './meet.service';
 import { Meet } from './entities/room.entity';
+import { User } from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Meet])],
+  imports: [TypeOrmModule.forFeature([Meet, User])],
   controllers: [MeetController],
   providers: [MeetService, MeetGateway],
 })
