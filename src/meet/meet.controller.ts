@@ -8,6 +8,7 @@ import {
   UseGuards,
   Delete,
   Query,
+  Get,
 } from '@nestjs/common';
 import { MeetService } from './meet.service';
 import {
@@ -34,10 +35,29 @@ export class MeetController {
   @UseInterceptors(AnyFilesInterceptor())
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ status: 201, type: [Meet] })
+  @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth() // swagger文档设置token
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() createMeetDto: CreateMeetDto, @Request() req) {
     return await this.meetService.create(createMeetDto, req);
+  }
+
+  @Get('get')
+  @ApiOperation({ summary: '查询会议详情' })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  async get(@Query('id') id: string) {
+    return await this.meetService.get(id);
+  }
+
+  @Get('getMeetByUser')
+  @ApiOperation({ summary: '根据用户查询会议列表' })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  async getMeetByUser(@Request() req) {
+    return await this.meetService.getMeetByUser(req);
   }
 
   @Delete('del')

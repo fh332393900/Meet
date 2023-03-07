@@ -29,6 +29,19 @@ export class MeetService {
     return this.meetRepository.save(createMeetDtoParam);
   }
 
+  async get(meetId: string) {
+    const meet = await this.meetRepository.findOne({ meetId });
+    if (!meet) {
+      throw new HttpException(`会议不存在`, HttpStatus.BAD_REQUEST);
+    }
+    return meet;
+  }
+
+  async getMeetByUser(req) {
+    const list = await this.meetRepository.find({ meetUserId: req.user.id });
+    return list;
+  }
+
   async del(meetId: string, req) {
     const meet = await this.meetRepository.findOne({ meetId });
     if (req.user.id !== meet.meetUserId) {
